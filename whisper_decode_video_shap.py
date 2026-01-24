@@ -60,7 +60,7 @@ parser.add_argument('--noise-fn', default=None, help='Noise file for testing')
 parser.add_argument('--modalities', default="avsr", help='asr/avsr/vsr')
 
 # Output arguments
-parser.add_argument('--output-path', default="shap_results/", help='Path to save results')
+#parser.add_argument('--output-path', default="shap_results/", help='Path to save results')
 
 # WandB arguments
 parser.add_argument('--wandb-project', default=None, type=str, 
