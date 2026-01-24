@@ -53,6 +53,8 @@ parser.add_argument('--num-samples-shap', default=2000, type=int, help='Number o
 parser.add_argument('--shap-alg', default='kernel', choices=['kernel', 'permutation'],
                     help='SHAP algorithm')
 parser.add_argument('--verbose', default=True, help='Print detailed SHAP info')
+parser.add_argument('--debug', action='store_true', 
+                    help='Enable extensive debugging output (more detailed than --verbose)')
 
 # Data arguments
 parser.add_argument('--noise-snr', default=1000, type=int, help='>100 is off (clean audio)')
