@@ -47,7 +47,7 @@ class MuavicVideoDataset(torch.utils.data.Dataset):
         self.spec_augment = spec_augment
         self.noise_prob = noise_prob
         self.noise_fn = [ln.strip() for ln in open(noise_fn).readlines()] if noise_fn is not None else []
-        print("Noise fn: ",noise_fn)
+        print("Noise fn: ",self.noise_fn)
         self.train = train
         self.noise_snr = noise_snr
         print("Dataloader max length : {}".format(max_length))
