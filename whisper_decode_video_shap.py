@@ -52,7 +52,7 @@ parser.add_argument('--fp16', default=1, type=int, help='Use FP16')
 parser.add_argument('--num-samples-shap', default=2000, type=int, help='Number of SHAP samples')
 parser.add_argument('--shap-alg', default='kernel', choices=['kernel', 'permutation'],
                     help='SHAP algorithm')
-parser.add_argument('--verbose', action='store_true', help='Print detailed SHAP info')
+parser.add_argument('--verbose', default=True, help='Print detailed SHAP info')
 
 # Data arguments
 parser.add_argument('--noise-snr', default=1000, type=int, help='>100 is off (clean audio)')
@@ -255,11 +255,9 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
             'sample_video_neg': video_neg,
         })
         
-        # Print progress
-        if (batch_idx + 1) % 10 == 0 or args.verbose:
-            print(f"\nSample {batch_idx + 1}/{len(dataloader)}:")
-            print(f"  Absolute - Audio: {audio_abs*100:.2f}%, Video: {video_abs*100:.2f}%")
-            print(f"  Reference: {ref_text[:100]}...")
+        print(f"\nSample {batch_idx + 1}/{len(dataloader)}:")
+        print(f"  Absolute - Audio: {audio_abs*100:.2f}%, Video: {video_abs*100:.2f}%")
+        print(f"  Reference: {ref_text[:100]}...")
     
     except Exception as e:
         print(f"\nError processing sample {batch_idx}: {e}")
