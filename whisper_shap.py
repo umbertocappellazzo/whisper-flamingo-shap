@@ -47,6 +47,8 @@ def extract_features(
             padding_mask=padding_mask
         )
     
+    audio_features = torch.zeros_like(audio_features)
+    
     return audio_features, video_features
 
 
