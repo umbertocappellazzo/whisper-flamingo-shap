@@ -366,7 +366,21 @@ def forward_shap_whisper_flamingo(
             model=shap_model,
             data=background
         )
-        shap_values = explainer.shap_values(x_explain, nsamples=nsamples)
+        shap_values_raw = explainer.shap_values(x_explain, nsamples=nsamples)
+        
+        # DEBUG: See what SHAP returns
+        print(f"\n[SHAP OUTPUT DEBUG]")
+        print(f"  Type: {type(shap_values_raw)}")
+        if isinstance(shap_values_raw, list):
+            print(f"  List length: {len(shap_values_raw)}")
+            print(f"  First element type: {type(shap_values_raw[0])}")
+            print(f"  First element shape: {np.array(shap_values_raw[0]).shape}")
+            if len(shap_values_raw) > 1:
+                print(f"  Second element shape: {np.array(shap_values_raw[1]).shape}")
+        else:
+            print(f"  Array shape: {np.array(shap_values_raw).shape}")
+        
+        shap_values = shap_values_raw
     
     elif shap_alg == "permutation":
         from shap.maskers import Independent
