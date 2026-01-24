@@ -229,7 +229,8 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
             nsamples=args.num_samples_shap,
             shap_alg=args.shap_alg,
             device=device,
-            verbose=args.verbose
+            verbose=args.verbose,
+            debug=args.debug
         )
         
         # Store results
