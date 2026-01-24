@@ -330,7 +330,7 @@ def forward_shap_whisper_flamingo(
     # 4. SHAP wrapper function
     coalition_counter = [0]  # Mutable counter for debugging
     
-    def shap_wrapper(masks):
+    def shap_model(masks):
         result = evaluate_coalitions_whisper_flamingo(
             model,
             masks,
@@ -344,7 +344,18 @@ def forward_shap_whisper_flamingo(
             coalition_idx=coalition_counter[0]
         )
         coalition_counter[0] += masks.shape[0] if masks.ndim > 1 else 1
+        
+        # DEBUG: Print first call to see what SHAP receives
+        if not hasattr(shap_model, 'called'):
+            print(f"\n[SHAP WRAPPER DEBUG]")
+            print(f"  Wrapper receives masks shape: {masks.shape}")
+            print(f"  Wrapper returns result shape: {result.shape}")
+            print(f"  Result dtype: {result.dtype}")
+            shap_model.called = True
+        
         return result
+    
+    
     
     # 5. Compute SHAP
     if verbose or debug:
@@ -352,7 +363,7 @@ def forward_shap_whisper_flamingo(
     
     if shap_alg == "kernel":
         explainer = shap.SamplingExplainer(
-            model=shap_wrapper,
+            model=shap_model,
             data=background
         )
         shap_values = explainer.shap_values(x_explain, nsamples=nsamples)
@@ -362,7 +373,7 @@ def forward_shap_whisper_flamingo(
         masker = Independent(background, max_samples=100)
         
         explainer = shap.PermutationExplainer(
-            model=shap_wrapper,
+            model=shap_model,
             masker=masker,
             algorithm='auto'
         )
