@@ -452,8 +452,8 @@ def forward_shap_whisper_flamingo(
         print(f"  Video absolute contribution: {mm_video_abs:.4f}")
         print(f"  Total absolute: {total_abs:.4f}")
     
-    audio_pct_abs = mm_audio_abs / total_abs if total_abs > 0 else 0.5
-    video_pct_abs = mm_video_abs / total_abs if total_abs > 0 else 0.5
+    audio_pct_abs = mm_audio_abs / total_abs
+    video_pct_abs = mm_video_abs / total_abs
     
     # Positive SHAP
     mm_raw_pos = np.sum(np.maximum(vals, 0), axis=1)
@@ -461,8 +461,8 @@ def forward_shap_whisper_flamingo(
     mm_video_pos = mm_raw_pos[N_a:].sum()
     total_pos = mm_audio_pos + mm_video_pos
     
-    audio_pct_pos = mm_audio_pos / total_pos if total_pos > 0 else 0.5
-    video_pct_pos = mm_video_pos / total_pos if total_pos > 0 else 0.5
+    audio_pct_pos = mm_audio_pos / total_pos
+    video_pct_pos = mm_video_pos / total_pos
     
     # Negative SHAP
     mm_raw_neg = np.sum(np.abs(np.minimum(vals, 0)), axis=1)
@@ -470,8 +470,8 @@ def forward_shap_whisper_flamingo(
     mm_video_neg = mm_raw_neg[N_a:].sum()
     total_neg = mm_audio_neg + mm_video_neg
     
-    audio_pct_neg = mm_audio_neg / total_neg if total_neg > 0 else 0.5
-    video_pct_neg = mm_video_neg / total_neg if total_neg > 0 else 0.5
+    audio_pct_neg = mm_audio_neg / total_neg
+    video_pct_neg = mm_video_neg / total_neg
     
     if verbose or debug:
         print(f"\n[7] Final Results:")
