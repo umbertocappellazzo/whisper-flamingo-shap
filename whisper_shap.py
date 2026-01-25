@@ -345,15 +345,15 @@ def forward_shap_whisper_flamingo(
         )
         coalition_counter[0] += masks.shape[0] if masks.ndim > 1 else 1
         
-        # DEBUG: Print first call to see what SHAP receives
-        if not hasattr(shap_model, 'called'):
-            print(f"\n[SHAP WRAPPER DEBUG]")
-            print(f"  Wrapper receives masks shape: {masks.shape}")
-            print(f"  Wrapper returns result shape: {result.shape}")
-            print(f"  Result dtype: {result.dtype}")
-            shap_model.called = True
+        # # DEBUG: Print first call to see what SHAP receives
+        # if not hasattr(shap_model, 'called'):
+        #     print(f"\n[SHAP WRAPPER DEBUG]")
+        #     print(f"  Wrapper receives masks shape: {masks.shape}")
+        #     print(f"  Wrapper returns result shape: {result.shape}")
+        #     print(f"  Result dtype: {result.dtype}")
+        #     shap_model.called = True
         
-        return result
+        # return result
     
     
     
