@@ -364,18 +364,28 @@ def forward_shap_whisper_flamingo(
         shap_values_raw = explainer.shap_values(x_explain, nsamples=nsamples)
         
         # DEBUG: See what SHAP returns
-        print(f"\n[SHAP OUTPUT DEBUG]")
-        print(f"  Type: {type(shap_values_raw)}")
-        if isinstance(shap_values_raw, list):
-            print(f"  List length: {len(shap_values_raw)}")
-            print(f"  First element type: {type(shap_values_raw[0])}")
-            print(f"  First element shape: {np.array(shap_values_raw[0]).shape}")
-            if len(shap_values_raw) > 1:
-                print(f"  Second element shape: {np.array(shap_values_raw[1]).shape}")
-        else:
-            print(f"  Array shape: {np.array(shap_values_raw).shape}")
+        if debug or verbose:
+            print(f"\n[SHAP OUTPUT DEBUG]")
+            print(f"  Type: {type(shap_values_raw)}")
+            if isinstance(shap_values_raw, list):
+                print(f"  List length: {len(shap_values_raw)}")
+                print(f"  First element shape: {np.array(shap_values_raw[0]).shape}")
+                if len(shap_values_raw) > 1:
+                    print(f"  Second element shape: {np.array(shap_values_raw[1]).shape}")
+            else:
+                print(f"  Array shape: {np.array(shap_values_raw).shape}")
         
-        shap_values = shap_values_raw
+        # SHAP 0.44.1 returns list of (1, features) arrays, one per token
+        # Stack them to get (features, tokens)
+        if isinstance(shap_values_raw, list):
+            if debug or verbose:
+                print(f"  Stacking {len(shap_values_raw)} token outputs...")
+            shap_values = np.stack([np.array(sv).squeeze() for sv in shap_values_raw], axis=1)
+        else:
+            # Unexpected format - try to handle it
+            shap_values = np.array(shap_values_raw)
+            if shap_values.ndim == 3:
+                shap_values = shap_values[0]
     
     elif shap_alg == "permutation":
         from shap.maskers import Independent
