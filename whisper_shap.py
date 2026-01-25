@@ -369,8 +369,6 @@ def forward_shap_whisper_flamingo(
         shap_values_raw = explainer.shap_values(x_explain, nsamples=nsamples)
         
         # DEBUG: See what SHAP returns
-        print("ciao")
-        print(shap_values_raw)
         print(f"\n[SHAP OUTPUT DEBUG]")
         print(f"  Type: {type(shap_values_raw)}")
         if isinstance(shap_values_raw, list):
@@ -399,8 +397,8 @@ def forward_shap_whisper_flamingo(
     else:
         raise ValueError(f"Unknown SHAP algorithm: {shap_alg}")
     
-    if debug:
-        print(f"\n  Total coalitions evaluated: {coalition_counter[0]}")
+    #if debug:
+    print(f"\n  Total coalitions evaluated: {coalition_counter[0]}")
     
     # 6. Process SHAP output (MATCHING Llama-AVSR EXACTLY)
     if isinstance(shap_values, list):
