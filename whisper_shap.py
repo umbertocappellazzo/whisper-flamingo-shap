@@ -53,7 +53,7 @@ def extract_features(
         print(f"  Video features zero ratio: {(video_features == 0).float().mean():.4f}")
     
     #audio_features = torch.zeros_like(audio_features)
-    video_features = torch.zeros_like(video_features)
+    #video_features = torch.zeros_like(video_features)
     return audio_features, video_features
 
 
