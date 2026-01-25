@@ -353,7 +353,7 @@ def forward_shap_whisper_flamingo(
         #     print(f"  Result dtype: {result.dtype}")
         #     shap_model.called = True
         
-        # return result
+        return result
     
     
     
