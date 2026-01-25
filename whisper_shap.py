@@ -123,18 +123,22 @@ def evaluate_coalitions_whisper_flamingo(
     debug: bool = False,
     coalition_idx: int = 0
 ) -> np.ndarray:
-    """
-    SHAP wrapper: evaluate coalitions via teacher forcing.
+    """SHAP wrapper: evaluate coalitions via teacher forcing."""
     
-    Returns a VECTOR of logits per coalition (matching Llama-AVSR).
-    """
     if masks.ndim == 1:
         masks = masks.reshape(1, -1)
     
     n_coalitions = masks.shape[0]
+    
+    # ADD THIS CHECK:
+    if n_coalitions == 0:
+        T_out = len(baseline_tokens_generated)
+        return np.empty((0, T_out), dtype=np.float32)
+    
     T_a = audio_features_full.shape[1]
     T_v = video_features_full.shape[1]
     
+    # CHANGE THIS: Only print for the VERY FIRST coalition ever
     if debug and coalition_idx == 0:
         print(f"\n[DEBUG evaluate_coalitions]")
         print(f"  Number of coalitions: {n_coalitions}")
@@ -148,22 +152,21 @@ def evaluate_coalitions_whisper_flamingo(
     for i in range(n_coalitions):
         mask = masks[i]
         
-        # Debug first coalition
-        if debug and i == 0:
+        # CHANGE THIS: Only print details for the VERY FIRST coalition ever
+        if debug and (coalition_idx + i) == 0:
             print(f"\n  Coalition 0 analysis:")
             print(f"    Mask shape: {mask.shape}")
             print(f"    Audio features kept: {mask[:T_a].sum()}/{T_a} ({mask[:T_a].mean()*100:.1f}%)")
             print(f"    Video features kept: {mask[T_a:].sum()}/{T_v} ({mask[T_a:].mean()*100:.1f}%)")
         
-        # Split mask: audio first, video second
+        # ... rest of masking code ...
+        
         mask_audio = mask[:T_a]
         mask_video = mask[T_a:]
         
-        # Clone and mask features
         audio_masked = audio_features_full.clone()
         video_masked = video_features_full.clone()
         
-        # Zero out timesteps where mask=0
         for t in range(T_a):
             if mask_audio[t] == 0:
                 audio_masked[:, t, :] = 0
@@ -172,11 +175,11 @@ def evaluate_coalitions_whisper_flamingo(
             if mask_video[t] == 0:
                 video_masked[:, t, :] = 0
         
-        if debug and i == 0:
+        if debug and (coalition_idx + i) == 0:
             print(f"    Audio masked zero ratio: {(audio_masked == 0).float().mean():.4f}")
             print(f"    Video masked zero ratio: {(video_masked == 0).float().mean():.4f}")
         
-        # Teacher forcing with FULL sequence (including SOT)
+        # Teacher forcing
         with torch.no_grad():
             logits = model.decoder(
                 baseline_tokens_full.unsqueeze(0),
@@ -185,21 +188,15 @@ def evaluate_coalitions_whisper_flamingo(
                 xv=video_masked
             )
             
-            if debug and i == 0:
+            if debug and (coalition_idx + i) == 0:
                 print(f"    Decoder output logits shape: {logits.shape}")
                 print(f"    Logits range: [{logits.min():.4f}, {logits.max():.4f}]")
             
-            # Extract logits for generated tokens
-            # logits[i] predicts token at position i+1
-            # So logits[sot_len-1] predicts baseline_tokens_generated[0]
             sot_len = len(tokenizer.sot_sequence)
-            
-            # Build positions tensor
             T = len(baseline_tokens_generated)
             positions = sot_len - 1 + torch.arange(T, device=device)
             
-            # Validate positions
-            if debug and i == 0:
+            if debug and (coalition_idx + i) == 0:
                 print(f"    Extracting logits at positions: {positions[:5].tolist()} ... {positions[-3:].tolist()}")
                 print(f"    For tokens: {baseline_tokens_generated[:5].tolist()} ... {baseline_tokens_generated[-3:].tolist()}")
                 max_pos = positions.max().item()
@@ -208,10 +205,9 @@ def evaluate_coalitions_whisper_flamingo(
                         f"Position index {max_pos} out of bounds for logits shape {logits.shape}"
                     )
             
-            # Extract logits for baseline tokens (matching Llama-AVSR)
             logit_vec = logits[0, positions, baseline_tokens_generated]
             
-            if debug and i == 0:
+            if debug and (coalition_idx + i) == 0:
                 print(f"    Extracted logit_vec shape: {logit_vec.shape}")
                 print(f"    Logit values range: [{logit_vec.min():.4f}, {logit_vec.max():.4f}]")
                 print(f"    First 5 logits: {logit_vec[:5].tolist()}")
@@ -219,18 +215,17 @@ def evaluate_coalitions_whisper_flamingo(
             
             logit_vec_np = logit_vec.detach().cpu().numpy()
             
-            # Check for invalid values
             if np.isnan(logit_vec_np).any():
-                warnings.warn(f"NaN detected in coalition {i} logits!")
+                warnings.warn(f"NaN detected in coalition {coalition_idx + i} logits!")
             if np.isinf(logit_vec_np).any():
-                warnings.warn(f"Inf detected in coalition {i} logits!")
+                warnings.warn(f"Inf detected in coalition {coalition_idx + i} logits!")
             
             results.append(logit_vec_np)
     
-    # Return (n_coalitions, T_out) - VECTORS not scalars!
     result_array = np.array(results)
     
-    if debug:
+    # CHANGE THIS: Only print for first batch
+    if debug and coalition_idx == 0:
         print(f"\n  Final results array shape: {result_array.shape}")
         print(f"  Results range: [{result_array.min():.4f}, {result_array.max():.4f}]")
     
