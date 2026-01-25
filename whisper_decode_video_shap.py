@@ -52,8 +52,8 @@ parser.add_argument('--fp16', default=1, type=int, help='Use FP16')
 parser.add_argument('--num-samples-shap', default=2000, type=int, help='Number of SHAP samples')
 parser.add_argument('--shap-alg', default='kernel', choices=['kernel', 'permutation'],
                     help='SHAP algorithm')
-parser.add_argument('--verbose', default=True, help='Print detailed SHAP info')
-parser.add_argument('--debug', default= True, 
+parser.add_argument('--verbose', default=False, help='Print detailed SHAP info')
+parser.add_argument('--debug', default= False, 
                     help='Enable extensive debugging output (more detailed than --verbose)')
 
 # Data arguments
