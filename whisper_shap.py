@@ -153,7 +153,7 @@ def evaluate_coalitions_whisper_flamingo(
         mask = masks[i]
         
         # CHANGE THIS: Only print details for the VERY FIRST coalition ever
-        if debug and (coalition_idx + i) == 0:
+        if debug and (coalition_idx + i) == 2:
             print(f"\n  Coalition 0 analysis:")
             print(f"    Mask shape: {mask.shape}")
             print(f"    Audio features kept: {mask[:T_a].sum()}/{T_a} ({mask[:T_a].mean()*100:.1f}%)")
@@ -374,7 +374,6 @@ def forward_shap_whisper_flamingo(
                     print(f"  Second element shape: {np.array(shap_values_raw[1]).shape}")
             else:
                 print(f"  Array shape: {np.array(shap_values_raw).shape}")
-        
         # SHAP 0.44.1 returns list of (1, features) arrays, one per token
         # Stack them to get (features, tokens)
         if isinstance(shap_values_raw, list):
