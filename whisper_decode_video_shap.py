@@ -216,55 +216,55 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
     
     labels = batch["labels"]
     
-    #try:
+    try:
         # Compute SHAP values
-    (audio_abs, video_abs,
-     audio_pos, video_pos,
-     audio_neg, video_neg) = forward_shap_whisper_flamingo(
-        model=whisper_model,
-        tokenizer=tokenizer,
-        mel=input_ids,
-        video=video,
-        padding_mask=padding_mask,
-        nsamples=args.num_samples_shap,
-        shap_alg=args.shap_alg,
-        device=device,
-        verbose=args.verbose,
-        debug=args.debug
-    )
+        (audio_abs, video_abs,
+         audio_pos, video_pos,
+         audio_neg, video_neg) = forward_shap_whisper_flamingo(
+            model=whisper_model,
+            tokenizer=tokenizer,
+            mel=input_ids,
+            video=video,
+            padding_mask=padding_mask,
+            nsamples=args.num_samples_shap,
+            shap_alg=args.shap_alg,
+            device=device,
+            verbose=args.verbose,
+            debug=args.debug
+        )
+        
+        # Store results
+        results['audio_abs'].append(audio_abs)
+        results['video_abs'].append(video_abs)
+        results['audio_pos'].append(audio_pos)
+        results['video_pos'].append(video_pos)
+        results['audio_neg'].append(audio_neg)
+        results['video_neg'].append(video_neg)
+        
+        # Decode reference text
+        labels_clean = labels.clone()
+        labels_clean[labels_clean == -100] = tokenizer.eot
+        ref_text = tokenizer.decode([t for t in labels_clean[0] 
+                                     if t.item() not in special_token_set])
+        results['baseline_texts'].append(ref_text)
+        
+        wandb.log({
+            'sample_idx': batch_idx,
+            'sample_audio_abs': audio_abs,
+            'sample_video_abs': video_abs,
+            'sample_audio_pos': audio_pos,
+            'sample_video_pos': video_pos,
+            'sample_audio_neg': audio_neg,
+            'sample_video_neg': video_neg,
+        })
+        
+        print(f"\nSample {batch_idx + 1}/{len(dataloader)}:")
+        print(f"  Absolute - Audio: {audio_abs*100:.2f}%, Video: {video_abs*100:.2f}%")
+        print(f"  Reference: {ref_text[:100]}...")
     
-    # Store results
-    results['audio_abs'].append(audio_abs)
-    results['video_abs'].append(video_abs)
-    results['audio_pos'].append(audio_pos)
-    results['video_pos'].append(video_pos)
-    results['audio_neg'].append(audio_neg)
-    results['video_neg'].append(video_neg)
-    
-    # Decode reference text
-    labels_clean = labels.clone()
-    labels_clean[labels_clean == -100] = tokenizer.eot
-    ref_text = tokenizer.decode([t for t in labels_clean[0] 
-                                 if t.item() not in special_token_set])
-    results['baseline_texts'].append(ref_text)
-    
-    wandb.log({
-        'sample_idx': batch_idx,
-        'sample_audio_abs': audio_abs,
-        'sample_video_abs': video_abs,
-        'sample_audio_pos': audio_pos,
-        'sample_video_pos': video_pos,
-        'sample_audio_neg': audio_neg,
-        'sample_video_neg': video_neg,
-    })
-    
-    print(f"\nSample {batch_idx + 1}/{len(dataloader)}:")
-    print(f"  Absolute - Audio: {audio_abs*100:.2f}%, Video: {video_abs*100:.2f}%")
-    print(f"  Reference: {ref_text[:100]}...")
-    
-    # except Exception as e:
-    #     print(f"\nError processing sample {batch_idx}: {e}")
-    #     continue
+    except Exception as e:
+        print(f"\nError processing sample {batch_idx}: {e}")
+        continue
 
 # Compute aggregate statistics
 print("\n" + "="*80)
