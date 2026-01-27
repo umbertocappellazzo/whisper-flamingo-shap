@@ -273,6 +273,10 @@ class AudioEncoder(nn.Module):
 
         x = self.ln_post(x)
 
+        #print("Setting audio tokens to 0!")
+        #x= torch.zeros_like(x)
+        #x_v= torch.zeros_like(x_v)
+
         if training: # modality dropout, encoder
             mod_drop_prob = np.random.random()
             if 0 < mod_drop_prob <= self.prob_av:

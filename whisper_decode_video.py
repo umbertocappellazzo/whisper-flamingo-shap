@@ -26,7 +26,7 @@ import sacrebleu
 parser = argparse.ArgumentParser()
 parser.add_argument('--lang', default='ru', type=str, help='decoding language')
 parser.add_argument('--model-type', default='medium', help='Whisper model size, note: large-v2, not large')
-parser.add_argument('--noise-snr',  default=1000, type=int, help='>100 is off, so 1000 means clean audio')
+parser.add_argument('--noise-snr',  default=1000, type=float, help='>100 is off, so 1000 means clean audio')
 parser.add_argument('--noise-fn', default=None, help='testing noise file')
 parser.add_argument('--beam-size', default=1, type=int, help='if 1 use greedy else beam search')
 parser.add_argument('--modalities', default="avsr", help='asr for audio-only, avsr for audio-visual')
