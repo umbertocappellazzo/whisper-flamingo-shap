@@ -58,7 +58,7 @@ parser.add_argument('--debug', action='store_true',
                     help='Enable extensive debugging output (more detailed than --verbose)')
 
 # Data arguments
-parser.add_argument('--noise-snr', default=1000, type=int, help='>100 is off (clean audio)')
+parser.add_argument('--noise-snr', default=1000, type=float, help='>100 is off (clean audio)')
 parser.add_argument('--noise-fn', default=None, help='Noise file for testing')
 parser.add_argument('--modalities', default="avsr", help='asr/avsr/vsr')
 
