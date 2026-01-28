@@ -269,29 +269,6 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
         print(f"  Absolute - Audio: {audio_abs*100:.2f}%, Video: {video_abs*100:.2f}%")
         print(f"  Reference: {ref_text[:100]}...")
         
-        
-        output_file = os.path.join(
-            args.output_path,
-            args.exp_name
-            
-        )
-
-        print("Output dir: ", output_file)
-
-        np.savez_compressed(
-                output_file,
-                # Aggregated metrics
-                audio_abs=np.array(results['audio_abs']),
-                video_abs=np.array(results['video_abs']),
-                audio_pos=np.array(results['audio_pos']),
-                video_pos=np.array(results['video_pos']),
-                audio_neg=np.array(results['audio_neg']),
-                video_neg=np.array(results['video_neg']),
-                num_audio_tokens=np.array(results['num_audio_tokens']),
-                
-                # Raw SHAP values (ragged array - stored as object array)
-                shap_values=np.array(results['shapley_values'], dtype=object),
-            )
     
     except Exception as e:
         print(f"\nError processing sample {batch_idx}: {e}")
