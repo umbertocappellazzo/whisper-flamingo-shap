@@ -271,8 +271,8 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
         
         
         output_file = os.path.join(
-            args.args.output_path,
-            args.args.exp_name
+            args.output_path,
+            args.exp_name
             
         )
 
@@ -339,8 +339,8 @@ wandb.log({
 
 
 output_file = os.path.join(
-    args.args.output_path,
-    args.args.exp_name
+    args.output_path,
+    args.exp_name
     
 )
 
