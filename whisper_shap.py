@@ -122,6 +122,7 @@ def evaluate_coalitions_whisper_flamingo(
     baseline_tokens_full: torch.Tensor,
     tokenizer,
     device: str,
+    audio_downsample_ratio: int = 2,
     debug: bool = False,
     coalition_idx: int = 0
 ) -> np.ndarray:
@@ -137,14 +138,18 @@ def evaluate_coalitions_whisper_flamingo(
         T_out = len(baseline_tokens_generated)
         return np.empty((0, T_out), dtype=np.float32)
     
-    T_a = audio_features_full.shape[1]
+    T_a_full = audio_features_full.shape[1]
     T_v = video_features_full.shape[1]
+    
+    # Mask dimensions
+    N_a_mask = T_a_full // audio_downsample_ratio  # e.g., 310 // 2 = 155
+    N_v_mask = T_v                                  # e.g., 155
     
     # CHANGE THIS: Only print for the VERY FIRST coalition ever
     if debug and coalition_idx == 0:
         print(f"\n[DEBUG evaluate_coalitions]")
         print(f"  Number of coalitions: {n_coalitions}")
-        print(f"  Audio timesteps: {T_a}, Video timesteps: {T_v}")
+        print(f"  Audio timesteps: {T_a_full}, Video timesteps: {T_v}")
         print(f"  Baseline tokens (generated): {len(baseline_tokens_generated)}")
         print(f"  Baseline tokens (full with SOT): {len(baseline_tokens_full)}")
         print(f"  SOT length: {len(tokenizer.sot_sequence)}")
@@ -158,28 +163,41 @@ def evaluate_coalitions_whisper_flamingo(
         if debug and (coalition_idx + i) == 2:
             print(f"\n  Coalition 0 analysis:")
             print(f"    Mask shape: {mask.shape}")
-            print(f"    Audio features kept: {mask[:T_a].sum()}/{T_a} ({mask[:T_a].mean()*100:.1f}%)")
-            print(f"    Video features kept: {mask[T_a:].sum()}/{T_v} ({mask[T_a:].mean()*100:.1f}%)")
+            print(f"    Audio mask elements kept: {mask[:N_a_mask].sum()}/{N_a_mask} ({mask[:N_a_mask].mean()*100:.1f}%)")
+            print(f"    Video mask elements kept: {mask[N_a_mask:].sum()}/{N_v_mask} ({mask[N_a_mask:].mean()*100:.1f}%)")
         
         # ... rest of masking code ...
         
-        mask_audio = mask[:T_a]
-        mask_video = mask[T_a:]
+        mask_audio = mask[:N_a_mask]
+        mask_video = mask[N_a_mask:]
         
         audio_masked = audio_features_full.clone()
         video_masked = video_features_full.clone()
         
-        for t in range(T_a):
-            if mask_audio[t] == 0:
-                audio_masked[:, t, :] = 0
+        # Mask GROUPS of audio timesteps
+        # If mask_audio[i] = 0, zero out audio_features[:, i*ratio:(i+1)*ratio, :]
+        for i_mask in range(N_a_mask):
+            if mask_audio[i_mask] == 0:
+                start_idx = i_mask * audio_downsample_ratio
+                end_idx = min((i_mask + 1) * audio_downsample_ratio, T_a_full)
+                audio_masked[:, start_idx:end_idx, :] = 0
         
+        # Mask video timesteps (1:1 mapping)
         for t in range(T_v):
             if mask_video[t] == 0:
                 video_masked[:, t, :] = 0
         
         if debug and (coalition_idx + i) == 0:
-            print(f"    Audio masked zero ratio: {(audio_masked == 0).float().mean():.4f}")
-            print(f"    Video masked zero ratio: {(video_masked == 0).float().mean():.4f}")
+            audio_masked_count = (audio_masked == 0).float().sum().item() / audio_masked.numel()
+            video_masked_count = (video_masked == 0).float().sum().item() / video_masked.numel()
+            print(f"    Audio masked zero ratio: {audio_masked_count:.4f}")
+            print(f"    Video masked zero ratio: {video_masked_count:.4f}")
+            
+            # Count actual timesteps masked
+            audio_ts_masked = sum(1 for i_m in range(N_a_mask) if mask_audio[i_m] == 0) * audio_downsample_ratio
+            video_ts_masked = sum(1 for t in range(T_v) if mask_video[t] == 0)
+            print(f"    Audio timesteps masked: {audio_ts_masked}/{T_a_full}")
+            print(f"    Video timesteps masked: {video_ts_masked}/{T_v}")
         
         # Teacher forcing
         with torch.no_grad():
@@ -244,7 +262,8 @@ def forward_shap_whisper_flamingo(
     shap_alg: str = "kernel",
     device: str = 'cuda',
     verbose: bool = False,
-    debug: bool = False
+    debug: bool = False,
+    audio_downsample_ratio: int = 2 
 ) -> Tuple[float, float, float, float, float, float]:
     """
     Compute SHAP values for Whisper-Flamingo.
@@ -270,16 +289,25 @@ def forward_shap_whisper_flamingo(
         model, mel, video, padding_mask, device, debug=debug
     )
     
-    T_a = audio_features.shape[1]
+    T_a_full = audio_features.shape[1]
     T_v = video_features.shape[1]
     
+    # SHAP mask dimensions (grouped audio)
+    N_a = T_a_full // audio_downsample_ratio  # 155
+    N_v = T_v                                   # 155
+    p = N_a + N_v                               # 310 (not 465!)
+    
     if verbose or debug:
-        print(f"  Audio features: {audio_features.shape}")
+        print(f"  Audio features (full): {audio_features.shape}")
         print(f"  Video features: {video_features.shape}")
+        print(f"  Audio downsample ratio: {audio_downsample_ratio}")
+        print(f"  Audio mask elements: {N_a} (controls {T_a_full} timesteps)")
+        print(f"  Video mask elements: {N_v}")
     
     # 2. Generate baseline tokens
     if verbose or debug:
         print("\n[2] Generating baseline tokens...")
+    
     baseline_tokens_generated = generate_baseline_greedy(
         model, tokenizer, audio_features, video_features, 
         device=device, debug=debug
@@ -308,14 +336,11 @@ def forward_shap_whisper_flamingo(
         print(f"    Full baseline length: {len(baseline_tokens_full)}")
         print(f"    Full baseline: {baseline_tokens_full[:10].tolist()} ... {baseline_tokens_full[-5:].tolist()}")
     
-    # 3. SHAP setup
-    N_a = T_a
-    N_v = T_v
-    p = N_a + N_v
     
     if verbose or debug:
         print(f"\n[3] SHAP setup:")
-        print(f"  Total features: {p} (audio: {N_a}, video: {N_v})")
+        print(f"  Total mask features: {p} (audio: {N_a}, video: {N_v})")
+        print(f"  Each audio mask element controls {audio_downsample_ratio} timesteps")
     
     background = np.zeros((1, p), dtype=np.float32)
     x_explain = np.ones((1, p), dtype=np.float32)
@@ -489,5 +514,6 @@ def forward_shap_whisper_flamingo(
     return (
         audio_pct_abs, video_pct_abs,
         audio_pct_pos, video_pct_pos,
-        audio_pct_neg, video_pct_neg
+        audio_pct_neg, video_pct_neg,
+        T_a_full, vals
     )

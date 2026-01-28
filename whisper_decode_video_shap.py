@@ -70,6 +70,7 @@ parser.add_argument('--wandb-project', default=None, type=str,
                     help='WandB project name (if None, WandB disabled)')
 parser.add_argument('--exp-name', default=None, type=str,
                     help='WandB run name (auto-generated if None)')
+parser.add_argument('--output-path', default=None, type=str)
 
 args = parser.parse_args()
 
@@ -197,6 +198,8 @@ results = {
     'video_pos': [],
     'audio_neg': [],
     'video_neg': [],
+    'num_audio_tokens': [],
+    'shapley_values': [],
     'baseline_texts': [],
 }
 
@@ -221,7 +224,8 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
         # Compute SHAP values
         (audio_abs, video_abs,
          audio_pos, video_pos,
-         audio_neg, video_neg) = forward_shap_whisper_flamingo(
+         audio_neg, video_neg,
+         num_audio_tokens, shapley_values) = forward_shap_whisper_flamingo(
             model=whisper_model,
             tokenizer=tokenizer,
             mel=input_ids,
@@ -241,13 +245,14 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
         results['video_pos'].append(video_pos)
         results['audio_neg'].append(audio_neg)
         results['video_neg'].append(video_neg)
+        results['num_audio_tokens'].append(num_audio_tokens)
+        results['shapley_values'].append(shapley_values)
         
         # Decode reference text
         labels_clean = labels.clone()
         labels_clean[labels_clean == -100] = tokenizer.eot
         ref_text = tokenizer.decode([t for t in labels_clean[0] 
                                      if t.item() not in special_token_set])
-        results['baseline_texts'].append(ref_text)
         
         wandb.log({
             'sample_idx': batch_idx,
@@ -257,6 +262,7 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
             'sample_video_pos': video_pos,
             'sample_audio_neg': audio_neg,
             'sample_video_neg': video_neg,
+            'sample_num_audio_tokens': num_audio_tokens
         })
         
         print(f"\nSample {batch_idx + 1}/{len(dataloader)}:")
@@ -278,6 +284,7 @@ mean_audio_pos = np.mean(results['audio_pos'])
 mean_video_pos = np.mean(results['video_pos'])
 mean_audio_neg = np.mean(results['audio_neg'])
 mean_video_neg = np.mean(results['video_neg'])
+mean_num_audio_tokens = np.mean(results['num_audio_tokens'])
 
 std_audio_abs = np.std(results['audio_abs'])
 std_video_abs = np.std(results['video_abs'])
@@ -302,41 +309,30 @@ wandb.log({
     'video-NEG-SHAP': mean_video_neg,
     'audio-ABS-STD': std_audio_abs,
     'video-ABS-STD': std_video_abs,
+    'num-audio-tokens': mean_num_audio_tokens
 })
 
 
-# wandb.finish()
-# print("\nResults logged to WandB")
 
-# # Save results to file
-# output_file = os.path.join(
-#     args.output_path,
-#     f'shap_results_{args.model_type}_{args.lang}_snr{args.noise_snr}.json'
-# )
+output_file = os.path.join(
+    args.args.output_path,
+    args.args.exp_name
+    
+)
 
-# with open(output_file, 'w') as f:
-#     json.dump({
-#         'args': vars(args),
-#         'results': {
-#             'audio_abs': [float(x) for x in results['audio_abs']],
-#             'video_abs': [float(x) for x in results['video_abs']],
-#             'audio_pos': [float(x) for x in results['audio_pos']],
-#             'video_pos': [float(x) for x in results['video_pos']],
-#             'audio_neg': [float(x) for x in results['audio_neg']],
-#             'video_neg': [float(x) for x in results['video_neg']],
-#         },
-#         'summary': {
-#             'mean_audio_abs': float(mean_audio_abs),
-#             'mean_video_abs': float(mean_video_abs),
-#             'mean_audio_pos': float(mean_audio_pos),
-#             'mean_video_pos': float(mean_video_pos),
-#             'mean_audio_neg': float(mean_audio_neg),
-#             'mean_video_neg': float(mean_video_neg),
-#             'std_audio_abs': float(std_audio_abs),
-#             'std_video_abs': float(std_video_abs),
-#             'num_samples': len(results['audio_abs']),
-#         }
-#     }, f, indent=2)
+print("Output dir: ", output_file)
 
-# print(f"\nResults saved to: {output_file}")
-# print("\nDone!")
+np.savez_compressed(
+        output_file,
+        # Aggregated metrics
+        audio_abs=np.array(results['audio_abs']),
+        video_abs=np.array(results['video_abs']),
+        audio_pos=np.array(results['audio_pos']),
+        video_pos=np.array(results['video_pos']),
+        audio_neg=np.array(results['audio_neg']),
+        video_neg=np.array(results['video_neg']),
+        num_audio_tokens=np.array(results['num_audio_tokens']),
+        
+        # Raw SHAP values (ragged array - stored as object array)
+        shap_values=np.array(results['shapley_values'], dtype=object),
+    )
