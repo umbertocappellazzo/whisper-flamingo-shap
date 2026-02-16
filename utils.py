@@ -274,8 +274,8 @@ def load_data(AUDIO_MAX_LENGTH, TEXT_MAX_LENGTH, langs=['en', 'ar', 'de', 'el', 
                     audio_transcript_pair_list[split] += lang_filtered
             print(lang, split, len_before, len_after)
     print("Total data lengths")
-    print(len(audio_transcript_pair_list['train']))
-    print(len(audio_transcript_pair_list['valid']))
+    #print(len(audio_transcript_pair_list['train']))
+    #print(len(audio_transcript_pair_list['valid']))
     print(len(audio_transcript_pair_list['test']))
     return audio_transcript_pair_list
 
