@@ -218,8 +218,8 @@ def load_data(AUDIO_MAX_LENGTH, TEXT_MAX_LENGTH, langs=['en', 'ar', 'de', 'el', 
     for lang in langs:
         for split in audio_transcript_pair_list:
             if lrs2:
-                txt_fn = os.path.join('/data/sls/scratch/roudi/datasets/lrs2/whisper-flamingo/{}.wrd'.format(split))
-                tsv_fn = os.path.join('/data/sls/scratch/roudi/datasets/lrs2/whisper-flamingo/{}.tsv'.format(split))
+                txt_fn = os.path.join('/ucappell/lrs2_labels_whisper-flamingo/{}.wrd'.format(split))
+                tsv_fn = os.path.join('/ucappell/lrs2_labels_whisper-flamingo/{}.tsv'.format(split))
             elif lang == 'en':
                 if split == 'train' and vc2:
                     txt_fn = os.path.join(muavic_root, 'muavic', vc2_path, '{}.{}'.format(split, lang))
