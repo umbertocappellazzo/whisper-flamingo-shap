@@ -214,7 +214,7 @@ def load_data(AUDIO_MAX_LENGTH, TEXT_MAX_LENGTH, langs=['en', 'ar', 'de', 'el', 
               muavic_root='/data/sls/scratch/roudi/datasets/muavic/', reduce_val=None, include_audio_lens=False,
               AUDIO_MAX_LENGTH_VAL=480000, vc2=False, vc2_path='', lrs2=False, visible=False, task='transcribe'):
     # reduce_val: If not None, keep this number of samples from the validation set
-    audio_transcript_pair_list = {'train':[], 'valid':[], 'test':[]}
+    audio_transcript_pair_list = {'train':[], 'valid':[], 'test':[]} if not lrs2 else {'test':[]}
     for lang in langs:
         for split in audio_transcript_pair_list:
             if lrs2:
