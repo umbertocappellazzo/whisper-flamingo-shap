@@ -99,6 +99,10 @@ test_dataset = [[i[0], i[1].replace('/data/sls/scratch/roudi/datasets/muavic/', 
 
 print(f"Test dataset size: {len(test_dataset)}")
 
+print("Test # 0: ", test_dataset[0])
+print("Test # 15: ", test_dataset[15])
+print("Test # 330: ", test_dataset[300])
+
 # Create tokenizer
 multilingual = True if 'large' in args.model_type or 'en' not in args.model_type else False
 print(f"Multilingual tokenizer: {multilingual}")
