@@ -210,6 +210,7 @@ if args.lang == 'en' or args.task == 'transcribe':
             else: 
                 scorer.add_string(ref=r, pred=h)
                 wer = scorer.score()
+                print("WER: ", wer)
         if args.normalizer == 'whisper':
             wer = 100. * w_err/w_len
         print("WER: %.4f" % wer)
