@@ -90,7 +90,8 @@ dataset = MuavicVideoDataset(test_dataset,
 
 # For beam size of 1, use batch decoding with ~40s of audio per batch
 # For beam size >1, each audio sample is decoded separately
-length_sorter = LengthBatchSampler(batch_bins=1,
+length_sorter = LengthBatchSampler(batch_bins=SAMPLE_RATE * 40 if args.checkpoint_path and \
+                                   args.beam_size == 1 else 1,
                             shapes=[i[3] for i in test_dataset],
                             sort_in_batch='descending',
                             sort_batch='descending',
@@ -205,6 +206,9 @@ if args.lang == 'en' or args.task == 'transcribe':
                 wer_lowercase=True
             )
         )
+    
+    std = EnglishTextNormalizer()
+    c_err, c_len, w_err, w_len = 0, 0, 0, 0
     with open(os.path.join(out_path, 'wer.368862'), 'w+') as f:
         tp = 0
         for h, r in zip(hypo, refs):
@@ -214,12 +218,18 @@ if args.lang == 'en' or args.task == 'transcribe':
             else: 
                 scorer.add_string(ref=r, pred=h)
                 wer = scorer.score()
-                print(f"WER for idx {tp}: ", wer)
+                aa = editdistance.eval(std(r).split(), std(h).split())
+                bb = len(r.split())
+                w_err += aa
+                w_len += bb
+                
+                print(f"WER for idx {tp}: ", aa/bb)
                 tp+=1
-                wer_values.append(wer)
+                wer_values.append(aa/bb)
         if args.normalizer == 'whisper':
             wer = 100. * w_err/w_len
         print("WER: %.4f" % wer)
+        print("WER by whipser: ", wer)
         f.write("WER: %.4f\n" % wer)
     with open(os.path.join(out_path, 'wer.json'), 'w+',) as fp:
         json.dump({'pred': hypo, 'refs': refs}, fp)
