@@ -43,6 +43,8 @@ parser.add_argument('--task', default='transcribe', type=str, help='transcribe, 
 parser.add_argument('--normalizer', default='fairseq', type=str, help='whisper OR fairseq')
 parser.add_argument('--use-original-whisper', default=0, type=int, 
                                         help='if 1, ignore checkpoint-path and use original whisper')
+parser.add_argument('--output-path', default=None, type=str)
+parser.add_argument('--exp-name', default=None, type=str)
                                         
 args = parser.parse_args()
 SAMPLE_RATE = 16000
@@ -185,6 +187,8 @@ with open(os.path.join(out_path, 'pred.txt'), 'w+') as f:
                 print('REF: {}'.format(ref))
                 f.write('REF: {}\n'.format(ref))
 
+
+wer_values = []
 if args.lang == 'en' or args.task == 'transcribe':
     if args.normalizer == 'whisper':
         if args.lang == 'en':
@@ -212,12 +216,24 @@ if args.lang == 'en' or args.task == 'transcribe':
                 wer = scorer.score()
                 print(f"WER for idx {tp}: ", wer)
                 tp+=1
+                wer_values.append(wer)
         if args.normalizer == 'whisper':
             wer = 100. * w_err/w_len
         print("WER: %.4f" % wer)
         f.write("WER: %.4f\n" % wer)
     with open(os.path.join(out_path, 'wer.json'), 'w+',) as fp:
         json.dump({'pred': hypo, 'refs': refs}, fp)
+    
+    output_file = os.path.join(
+        args.output_path,
+        args.exp_name   
+    )
+    
+    np.savez_compressed(
+            output_file,
+            current_wer = wer_values
+        )
+    
 else:
     with open(os.path.join(out_path, 'bleu.368862'), 'w+') as f:
         bleu = sacrebleu.corpus_bleu(hypo, [refs]) #NOTE: [ref] not ref
