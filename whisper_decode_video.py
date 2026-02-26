@@ -229,7 +229,7 @@ if args.lang == 'en' or args.task == 'transcribe':
         if args.normalizer == 'whisper':
             wer = 100. * w_err/w_len
         print("WER: %.4f" % wer)
-        print("WER by whipser: ", wer)
+        print("WER by whisper: ", wer)
         f.write("WER: %.4f\n" % wer)
     with open(os.path.join(out_path, 'wer.json'), 'w+',) as fp:
         json.dump({'pred': hypo, 'refs': refs}, fp)
