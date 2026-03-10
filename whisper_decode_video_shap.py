@@ -195,10 +195,6 @@ wandb.init(
 results = {
     'audio_abs': [],
     'video_abs': [],
-    'audio_pos': [],
-    'video_pos': [],
-    'audio_neg': [],
-    'video_neg': [],
     'num_audio_tokens': [],
     'shapley_values': [],
     'baseline_texts': [],
@@ -224,8 +220,6 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
     try:
         # Compute SHAP values
         (audio_abs, video_abs,
-         audio_pos, video_pos,
-         audio_neg, video_neg,
          num_audio_tokens, shapley_values) = forward_shap_whisper_flamingo(
             model=whisper_model,
             tokenizer=tokenizer,
@@ -242,9 +236,6 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
         # Store results
         results['audio_abs'].append(audio_abs)
         results['video_abs'].append(video_abs)
-        results['audio_pos'].append(audio_pos)
-        results['video_pos'].append(video_pos)
-        results['audio_neg'].append(audio_neg)
         results['video_neg'].append(video_neg)
         results['num_audio_tokens'].append(num_audio_tokens)
         results['shapley_values'].append(shapley_values)
@@ -259,10 +250,6 @@ for batch_idx, batch in enumerate(tqdm(dataloader, desc="Computing SHAP")):
             'sample_idx': batch_idx,
             'sample_audio_abs': audio_abs,
             'sample_video_abs': video_abs,
-            'sample_audio_pos': audio_pos,
-            'sample_video_pos': video_pos,
-            'sample_audio_neg': audio_neg,
-            'sample_video_neg': video_neg,
             'sample_num_audio_tokens': num_audio_tokens
         })
         
@@ -282,10 +269,6 @@ print("="*80)
 
 mean_audio_abs = np.mean(results['audio_abs'])
 mean_video_abs = np.mean(results['video_abs'])
-mean_audio_pos = np.mean(results['audio_pos'])
-mean_video_pos = np.mean(results['video_pos'])
-mean_audio_neg = np.mean(results['audio_neg'])
-mean_video_neg = np.mean(results['video_neg'])
 mean_num_audio_tokens = np.mean(results['num_audio_tokens'])
 
 std_audio_abs = np.std(results['audio_abs'])
@@ -295,20 +278,10 @@ print(f"\nAggregate Results (n={len(results['audio_abs'])}):")
 print(f"\nAbsolute SHAP:")
 print(f"  Audio: {mean_audio_abs*100:.2f}% ± {std_audio_abs*100:.2f}%")
 print(f"  Video: {mean_video_abs*100:.2f}% ± {std_video_abs*100:.2f}%")
-print(f"\nPositive SHAP:")
-print(f"  Audio: {mean_audio_pos*100:.2f}%")
-print(f"  Video: {mean_video_pos*100:.2f}%")
-print(f"\nNegative SHAP:")
-print(f"  Audio: {mean_audio_neg*100:.2f}%")
-print(f"  Video: {mean_video_neg*100:.2f}%")
 
 wandb.log({
     'audio-ABS-SHAP': mean_audio_abs,
     'video-ABS-SHAP': mean_video_abs,
-    'audio-POS-SHAP': mean_audio_pos,
-    'video-POS-SHAP': mean_video_pos,
-    'audio-NEG-SHAP': mean_audio_neg,
-    'video-NEG-SHAP': mean_video_neg,
     'audio-ABS-STD': std_audio_abs,
     'video-ABS-STD': std_video_abs,
     'num-audio-tokens': mean_num_audio_tokens
@@ -329,10 +302,6 @@ np.savez_compressed(
         # Aggregated metrics
         audio_abs=np.array(results['audio_abs']),
         video_abs=np.array(results['video_abs']),
-        audio_pos=np.array(results['audio_pos']),
-        video_pos=np.array(results['video_pos']),
-        audio_neg=np.array(results['audio_neg']),
-        video_neg=np.array(results['video_neg']),
         num_audio_tokens=np.array(results['num_audio_tokens']),
         
         # Raw SHAP values (ragged array - stored as object array)

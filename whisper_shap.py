@@ -52,6 +52,8 @@ def extract_features(
         print(f"  Audio features zero ratio: {(audio_features == 0).float().mean():.4f}")
         print(f"  Video features zero ratio: {(video_features == 0).float().mean():.4f}")
     
+    # If we want to check the correctness of the method by setting audio/video features to 0! 
+
     #audio_features = torch.zeros_like(audio_features)
     #video_features = torch.zeros_like(video_features)
     return audio_features, video_features
@@ -367,14 +369,6 @@ def forward_shap_whisper_flamingo(
         )
         coalition_counter[0] += masks.shape[0] if masks.ndim > 1 else 1
         
-        # # DEBUG: Print first call to see what SHAP receives
-        # if not hasattr(shap_model, 'called'):
-        #     print(f"\n[SHAP WRAPPER DEBUG]")
-        #     print(f"  Wrapper receives masks shape: {masks.shape}")
-        #     print(f"  Wrapper returns result shape: {result.shape}")
-        #     print(f"  Result dtype: {result.dtype}")
-        #     shap_model.called = True
-        
         return result
     
     
@@ -431,7 +425,7 @@ def forward_shap_whisper_flamingo(
     #if debug:
     print(f"\n  Total coalitions evaluated: {coalition_counter[0]}")
     
-    # 6. Process SHAP output (MATCHING Llama-AVSR EXACTLY)
+    # 6. Process SHAP output
     if isinstance(shap_values, list):
         shap_values = shap_values[0]
     
@@ -466,7 +460,7 @@ def forward_shap_whisper_flamingo(
         if np.isinf(vals).any():
             warnings.warn("Inf values detected in SHAP values!")
     
-    # 7. Compute metrics (IDENTICAL to Llama-AVSR)
+    # 7. Compute metrics
     # Absolute SHAP - sum over tokens (axis=1)
     mm_raw_abs = np.sum(np.abs(vals), axis=1)  # (p,)
     mm_audio_abs = mm_raw_abs[:N_a].sum()
@@ -482,30 +476,10 @@ def forward_shap_whisper_flamingo(
     audio_pct_abs = mm_audio_abs / total_abs
     video_pct_abs = mm_video_abs / total_abs
     
-    # Positive SHAP
-    mm_raw_pos = np.sum(np.maximum(vals, 0), axis=1)
-    mm_audio_pos = mm_raw_pos[:N_a].sum()
-    mm_video_pos = mm_raw_pos[N_a:].sum()
-    total_pos = mm_audio_pos + mm_video_pos
-    
-    audio_pct_pos = mm_audio_pos / total_pos
-    video_pct_pos = mm_video_pos / total_pos
-    
-    # Negative SHAP
-    mm_raw_neg = np.sum(np.abs(np.minimum(vals, 0)), axis=1)
-    mm_audio_neg = mm_raw_neg[:N_a].sum()
-    mm_video_neg = mm_raw_neg[N_a:].sum()
-    total_neg = mm_audio_neg + mm_video_neg
-    
-    audio_pct_neg = mm_audio_neg / total_neg
-    video_pct_neg = mm_video_neg / total_neg
-    
     if verbose or debug:
         print(f"\n[7] Final Results:")
         print(f"  Absolute - Audio: {audio_pct_abs*100:.2f}%, Video: {video_pct_abs*100:.2f}%")
-        print(f"  Positive - Audio: {audio_pct_pos*100:.2f}%, Video: {video_pct_pos*100:.2f}%")
-        print(f"  Negative - Audio: {audio_pct_neg*100:.2f}%, Video: {video_pct_neg*100:.2f}%")
-    
+        
     if debug:
         print("="*80)
         print("SHAP COMPUTATION COMPLETE")
@@ -513,7 +487,5 @@ def forward_shap_whisper_flamingo(
     
     return (
         audio_pct_abs, video_pct_abs,
-        audio_pct_pos, video_pct_pos,
-        audio_pct_neg, video_pct_neg,
         T_a_full, vals
     )
