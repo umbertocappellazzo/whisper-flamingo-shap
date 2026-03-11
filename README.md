@@ -65,7 +65,7 @@ If you find our work useful, please cite:
 For questions and discussions, please:
 - Open an issue on GitHub
 - Email: umbertocappellazzo@gmail.com
-- Visit our [project page](https://umbertocappellazzo.github.io/Omni-AVSR/) and our [preprint](https://arxiv.org/abs/2511.07253)
+- Visit our [project page](https://umbertocappellazzo.github.io/Dr-SHAP-AV/) and our [preprint](https://arxiv.org/abs/2511.07253)
 
 ---
 
