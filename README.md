@@ -1,6 +1,6 @@
 ## Shapley Value computations for Whisper-Flamingo
 
-This repository contains the code to compute the audio/video SHAP contributions for the Whisper-Flamingo model. For more details, please refer to our [`paper`](??). 
+This repository contains the code to compute the audio/video SHAP contributions for the Whisper-Flamingo model. For more details, please refer to our [`paper`](https://arxiv.org/abs/2603.12046). 
 
 ---
 
@@ -47,7 +47,7 @@ If you find our work useful, please cite:
 @article{cappellazzo2026ODrSHAPAV,
   title={Dr. SHAP-AV: Decoding Relative Modality Contributions via Shapley Attribution in Audio-Visual Speech Recognition},
   author={Umberto, Cappellazzo and Stavros, Petridis and Maja, Pantic},
-  journal={arXiv preprint arXiv:?},
+  journal={arXiv preprint arXiv:2603.12046},
   year={2026}
 }
 ```
@@ -65,7 +65,7 @@ If you find our work useful, please cite:
 For questions and discussions, please:
 - Open an issue on GitHub
 - Email: umbertocappellazzo@gmail.com
-- Visit our [project page](https://umbertocappellazzo.github.io/Dr-SHAP-AV/) and our [preprint](https://arxiv.org/abs/2511.07253)
+- Visit our [project page](https://umbertocappellazzo.github.io/Dr-SHAP-AV/) and our [preprint](https://arxiv.org/abs/2603.12046)
 
 ---
 
